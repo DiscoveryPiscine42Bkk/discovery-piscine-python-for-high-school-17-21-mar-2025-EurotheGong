@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 number = int(input("Please enter number : "))
 if number > 0:
     print(number)
