@@ -1,69 +1,49 @@
-def parse_board(board):
-    board = board.strip().split("\n")
-    king_position = None
-    opponent_pieces = []
-    
+def find_king(board):
     for row in range(len(board)):
         for col in range(len(board[row])):
-            piece = board[row][col]
-            if piece == "K":
-                king_position = (row, col)
-            elif piece in "RBQ":
-                opponent_pieces.append((piece, row, col))
-    
-    return king_position, opponent_pieces
+            if board[row][col] == "K":
+                return row, col
+    return None
+
+def is_under_attack(board, row, col):
+    directions = {
+        "Rook": [(0,1), (0,-1), (1,0), (-1,0)],
+        "Bishop": [(1,1), (1,-1), (-1,1), (-1,-1)],
+        "Queen": [(0,1), (0,-1), (1,0), (-1,0), (1,1), (1,-1), (-1,1), (-1,-1)]
+    }
+
+    for piece, moves in directions.items():
+        for dr, dc in moves:
+            r, c = row, col
+            while 0 <= r + dr < len(board) and 0 <= c + dc < len(board[0]):
+                r += dr
+                c += dc
+                if board[r][c] == ".":
+                    continue
+                elif board[r][c] in ["R", "B", "Q"]:
+                    if (piece == "Rook" and board[r][c] == "R") or \
+                       (piece == "Bishop" and board[r][c] == "B") or \
+                       (piece == "Queen" and board[r][c] == "Q"):
+                        return True
+                break
+    return False
 
 def is_checkmate(board):
-    king_position, opponent_pieces = parse_board(board)
-    if not king_position:
-        print("There is no king on the board.")
+    king_pos = find_king(board)
+    if not king_pos:
         return False
 
-    king_x, king_y = king_position
-    board_size = len(board.strip().split("\n"))
+    row, col = king_pos
 
-    for piece in opponent_pieces:
-        piece_type, piece_x, piece_y = piece
+    if not is_under_attack(board, row, col):
+        return False  
 
-        if piece_type == "R":
-            if piece_x == king_x or piece_y == king_y:
-                return True
-        
-        if piece_type == "B":
-            if abs(piece_x - king_x) == abs(piece_y - king_y):
-                return True
+    moves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
-        if piece_type == "Q":
-            if piece_x == king_x or piece_y == king_y or abs(piece_x - king_x) == abs(piece_y - king_y):
-                return True
-
-    possible_moves = [
-        (king_x - 1, king_y - 1), (king_x - 1, king_y), (king_x - 1, king_y + 1),
-        (king_x, king_y - 1), (king_x, king_y + 1),
-        (king_x + 1, king_y - 1), (king_x + 1, king_y), (king_x + 1, king_y + 1) 
-    ]
-
-    for move in possible_moves:
-        new_x, new_y = move
-        if 0 <= new_x < board_size and 0 <= new_y < board_size:
-            is_safe = True
-            for piece in opponent_pieces:
-                piece_type, piece_x, piece_y = piece
-                if piece_type == "R":
-                    if piece_x == new_x or piece_y == new_y:
-                        is_safe = False
-                        break
-                if piece_type == "B":
-                    if abs(piece_x - new_x) == abs(piece_y - new_y):
-                        is_safe = False
-                        break
-                if piece_type == "Q":
-                    if piece_x == new_x or piece_y == new_y or abs(piece_x - new_x) == abs(piece_y - new_y):
-                        is_safe = False
-                        break
-
-            if is_safe:
+    for dr, dc in moves:
+        new_row, new_col = row + dr, col + dc
+        if 0 <= new_row < len(board) and 0 <= new_col < len(board[0]):
+            if board[new_row][new_col] == "." and not is_under_attack(board, new_row, new_col):
                 return False
 
-    print("No escape for the King! Checkmate!")
     return True
